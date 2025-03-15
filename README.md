@@ -201,3 +201,14 @@ I've generated a lot of documentation in `diags/20250314` and `docs/20250312` di
 *   **Communication:** Use Slack/Discord/Teams for daily communication.
 
 This README provides a starting point for team collaboration.  It should be updated as the project evolves.
+
+
+
+
+## AutoMeta 
+
+https://github.com/SillyTavern/SillyTavern
+
+
+
+https://github.com/matplotlib/matplotlib
