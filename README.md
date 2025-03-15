@@ -205,10 +205,8 @@ This README provides a starting point for team collaboration.  It should be upda
 
 
 
-## AutoMeta 
+# AutoMeta (alignment.ai) recommendations
 
-https://github.com/SillyTavern/SillyTavern
+[First Recommendation - SillyTavern](https://github.com/SillyTavern/SillyTavern)
 
-
-
-https://github.com/matplotlib/matplotlib
+[MatPlotLib](https://github.com/matplotlib/matplotlib)
