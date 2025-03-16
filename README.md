@@ -1,3 +1,154 @@
+# ContextNexus
+
+A next-generation context management system for large language models.
+
+## Project Overview
+
+ContextNexus transforms how users interact with large language models by making the traditionally hidden context mechanism explicit, visual, and user-manipulable through an intuitive interface.
+
+This project is currently in the MVP development stage, focusing on:
+
+1. Manual context management and selection
+2. Multi-tenancy and white-labeling
+3. Hierarchical thread organization
+4. Fine-grained content selection
+5. Token tracking and optimization
+
+## Setup Instructions
+
+### Setting Up on a Fresh Ubuntu 24.04 Server
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/contextnexus.git
+   cd contextnexus
+   ```
+
+2. Run the setup script:
+   ```bash
+   sudo bash scripts/setup.sh
+   ```
+
+   This script will:
+   - Install system dependencies (PostgreSQL, Node.js, etc.)
+   - Set up the database
+   - Install project dependencies
+   - Configure basic environment
+
+### Manual Setup
+
+If you prefer to set up the project manually or are using a different environment:
+
+1. Install PostgreSQL 15 or later
+
+2. Install Node.js 18 or later and npm
+
+3. Create a PostgreSQL database and user:
+   ```bash
+   sudo -u postgres psql
+   CREATE USER contextnexus WITH PASSWORD 'contextnexus';
+   CREATE DATABASE contextnexus WITH OWNER contextnexus;
+   GRANT ALL PRIVILEGES ON DATABASE contextnexus TO contextnexus;
+   \q
+   ```
+
+4. Initialize the database schema:
+   ```bash
+   npm run setup-db
+   ```
+
+5. Install dependencies:
+   ```bash
+   npm install
+   cd client && npm install
+   ```
+
+6. Create a `.env` file based on `.env.example`:
+   ```bash
+   cp .env.example .env
+   ```
+
+## Running the Application
+
+### Development Mode
+
+1. Start the backend server:
+   ```bash
+   npm run dev
+   ```
+
+2. Start the frontend development server:
+   ```bash
+   cd client && npm start
+   ```
+
+3. Access the application:
+   - Backend API: http://localhost:3000/api
+   - Frontend: http://localhost:3001
+
+### Production Mode
+
+1. Build the frontend:
+   ```bash
+   cd client && npm run build
+   ```
+
+2. Start the server:
+   ```bash
+   npm run build
+   npm start
+   ```
+
+3. Access the application at http://localhost:3000
+
+## Project Structure
+
+```
+contextnexus/
+├── README.md                  # Setup instructions
+├── scripts/                   # Setup scripts
+│   ├── setup.sh               # Main setup script
+│   └── db/                    # Database scripts
+│       ├── init-schema.sql    # PostgreSQL schema
+│       └── setup-db.sh        # Database initialization
+├── src/                       # Backend source code
+│   ├── config/                # Configuration
+│   ├── db/                    # Database layer
+│   ├── api/                   # API endpoints
+│   ├── index.ts               # Main server entry
+├── client/                    # Frontend source code
+│   ├── src/
+│   │   ├── components/
+│   │   │   └── NinjaSelector/ # Context selection UI
+│   │   ├── styles/            # CSS styles
+│   │   └── index.tsx          # Client entry
+├── package.json               # Server dependencies
+└── tsconfig.json              # TypeScript config
+```
+
+## Key Features
+
+- **Context Ninja Selector**: Visual interface for selecting, organizing, and managing context elements
+- **Paragraph-level Selection**: Choose specific paragraphs to include in context
+- **Token Optimization**: Track and optimize token usage
+- **Multi-tenancy**: Full support for multiple organizations
+- **Hierarchical Thread Structure**: Parent-child relationships between threads
+
+## Development Notes
+
+- This project uses PostgreSQL for all data storage
+- The backend is built with Express and TypeScript
+- The frontend uses React with TypeScript and Tailwind CSS
+- The application follows a RESTful API design
+
+## License
+
+[Your chosen license]
+
+
+
+
+
 # kb
 AI Jam private
 

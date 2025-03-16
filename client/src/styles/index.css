@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Selection indicators */
+.selection-indicator {
+  transition: background-color 0.2s ease-in-out;
+}
+
+.selection-indicator.selected {
+  background-color: #dbeafe;
+}
+
+.selected-content {
+  position: relative;
+}
+
+.selected-content:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #bae6fd;
+  opacity: 0.3;
+  border-radius: 0.375rem;
+  pointer-events: none;
+}
+
+/* Token heat map */
+.token-bar {
+  transition: width 0.5s ease-in-out;
+}
+
+/* Focus style for keyboard navigation */
+.selectable:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Keyboard shortcut badges */
+.shortcut-badge {
+  background-color: #e2e8f0;
+  color: #475569;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
