@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Interaction Studio</title>
+  
+  <!-- React and ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Roboto', Arial, sans-serif;
+    }
+    
+    body {
+      overflow: hidden;
+      background-color: #1a1a1a;
+    }
+    
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #2a2a2a;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #3d3d3d;
+      border-radius: 5px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    
+    /* Range slider styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      height: 8px;
+      border-radius: 4px;
+      background: #4b5563;
+      outline: none;
+    }
+    
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+    }
+    
+    /* Knob styling */
+    .knob {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #2d2d2d;
+      border: 2px solid #444;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto;
+      cursor: pointer;
+    }
+    
+    .knob::after {
+      content: '';
+      position: absolute;
+      width: 2px;
+      height: 20px;
+      background: #0084ff;
+      transform-origin: bottom center;
+      top: 2px;
+    }
+    
+    .knob-label {
+      text-align: center;
+      font-size: 10px;
+      color: #aaa;
+      margin-top: 4px;
+    }
+    
+    .knob-value {
+      text-align: center;
+      font-size: 12px;
+      color: #fff;
+      margin-top: 2px;
+    }
+    
+    /* LED Indicator */
+    .led {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin: 0 4px;
+    }
+    
+    .led.green {
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
+    }
+    
+    .led.red {
+      background: #ef4444;
+      box-shadow: 0 0 6px #ef4444;
+    }
+    
+    .led.blue {
+      background: #3b82f6;
+      box-shadow: 0 0 6px #3b82f6;
+    }
+    
+    /* Button styling */
+    .daw-button {
+      background: #333;
+      border: 1px solid #555;
+      color: #ddd;
+      border-radius: 3px;
+      padding: 2px 8px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+    
+    .daw-button:hover {
+      background: #444;
+    }
+    
+    .daw-button.active {
+      background: #0084ff;
+      color: white;
+      border-color: #0084ff;
+    }
+    
+    /* Plugin widget container */
+    .plugin-widget {
+      background: #2d2d2d;
+      border: 1px solid #444;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .plugin-header {
+      background: #333;
+      padding: 4px 8px;
+      font-size: 10px;
+      color: #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #555;
+    }
+    
+    /* Waveform visualization */
+    .waveform {
+      display: flex;
+      align-items: flex-end;
+      height: 60px;
+      gap: 1px;
+      padding: 4px;
+      background: #222;
+    }
+    
+    .waveform-bar {
+      width: 3px;
+      background: currentColor;
+      border-radius: 1px 1px 0 0;
+    }
+    
+    /* Tailwind config */
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'track-purple': '#a855f7',
+            'track-blue': '#3b82f6',
+            'track-green': '#22c55e',
+            'track-pink': '#ec4899',
+            'track-amber': '#f59e0b',
+            'track-orange': '#f97316',
+            'track-red': '#ef4444',
+            'track-yellow': '#eab308',
+          }
+        }
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // Destructure React hooks
+    const { useState, useEffect, useRef } = React;
+    const { createRoot } = ReactDOM;
+    
+    // Icons component wrapper for Lucide
+    const Icon = ({ name, size = 24, ...props }) => {
+      useEffect(() => {
+        lucide.createIcons();
+      }, []);
+      
+      return (
+        <i data-lucide={name} style={{ width: size, height: size }} {...props}></i>
+      );
+    };
+    
+    // Knob Component
+    const Knob = ({ value, min = 0, max = 100, onChange, label, color = '#0084ff', size = 'md' }) => {
+      const knobRef = useRef(null);
+      const [rotation, setRotation] = useState(0);
+      const [isDragging, setIsDragging] = useState(false);
+      const [startY, setStartY] = useState(0);
+      const [startValue, setStartValue] = useState(value);
+      
+      // Size mappings
+      const sizes = {
+        sm: { width: 30, height: 30, fontSize: 8 },
+        md: { width: 40, height: 40, fontSize: 10 },
+        lg: { width: 50, height: 50, fontSize: 12 },
+      };
+      
+      // Calculate rotation angle based on value
+      useEffect(() => {
+        const range = max - min;
+        const percentage = ((value - min) / range) * 100;
+        const angle = (percentage / 100) * 270 - 135; // -135 to +135 degrees
+        setRotation(angle);
+      }, [value, min, max]);
+      
+      // Drag handlers
+      const handleMouseDown = (e) => {
+        setIsDragging(true);
+        setStartY(e.clientY);
+        setStartValue(value);
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+      };
+      
+      const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        
+        const deltaY = startY - e.clientY;
+        const range = max - min;
+        const newValue = Math.min(max, Math.max(min, startValue + (deltaY / 100) * range));
+        
+        onChange(newValue);
+      };
+      
+      const handleMouseUp = () => {
+        setIsDragging(false);
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+      
+      const { width, height, fontSize } = sizes[size] || sizes.md;
+      
+      return (
+        <div className="flex flex-col items-center">
+          <div 
+            ref={knobRef}
+            className="knob"
+            style={{ 
+              width: `${width}px`, 
+              height: `${height}px`,
+              cursor: isDragging ? 'grabbing' : 'grab'
+            }}
+            onMouseDown={handleMouseDown}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                width: '2px',
+                height: `${height * 0.4}px`,
+                background: color,
+                transform: `rotate(${rotation}deg)`,
+                transformOrigin: 'bottom center',
+                top: `${height * 0.1}px`
+              }}
+            />
+            <div
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#222',
+                border: `1px solid ${color}`
+              }}
+            />
+          </div>
+          <div className="knob-label" style={{ fontSize: `${fontSize}px` }}>{label}</div>
+          <div className="knob-value" style={{ fontSize: `${fontSize + 2}px` }}>
+            {value.toFixed(1)}
+          </div>
+        </div>
+      );
+    };
+    
+    // LED Indicator Component
+    const LED = ({ active, color = 'green' }) => {
+      return (
+        <div className={`led ${color} ${active ? 'opacity-100' : 'opacity-30'}`}></div>
+      );
+    };
+    
+    // DAW Button Component
+    const DAWButton = ({ children, active, onClick, className = '' }) => {
+      return (
+        <button 
+          className={`daw-button ${active ? 'active' : ''} ${className}`}
+          onClick={onClick}
+        >
+          {children}
+        </button>
+      );
+    };
+    
+    // Plugin Widget Component
+    const PluginWidget = ({ title, children, className = '' }) => {
+      return (
+        <div className={`plugin-widget ${className}`}>
+          <div className="plugin-header">
+            <span>{title}</span>
+            <div className="flex space-x-1">
+              <button className="text-gray-400 hover:text-gray-200">
+                <Icon name="maximize-2" size={8} />
+              </button>
+              <button className="text-gray-400 hover:text-gray-200">
+                <Icon name="x" size={8} />
+              </button>
+            </div>
+          </div>
+          <div className="p-2">
+            {children}
+          </div>
+        </div>
+      );
+    };
+    
+    // Waveform Component
+    const Waveform = ({ data, color, height = 60 }) => {
+      return (
+        <div className="waveform" style={{ height: `${height}px` }}>
+          {data.map((value, index) => (
+            <div
+              key={index}
+              className="waveform-bar"
+              style={{ 
+                height: `${value}%`,
+                backgroundColor: color
+              }}
+            />
+          ))}
+        </div>
+      );
+    };
+    
+    // AI Interaction Studio Component
+    const AIInteractionStudio = () => {
+      // State for tracks, clips, position, etc.
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [isRecording, setIsRecording] = useState(false);
+      const [currentPosition, setCurrentPosition] = useState(4);
+      const [selectedTrack, setSelectedTrack] = useState(2);
+      const [selectedClips, setSelectedClips] = useState(['response-1', 'query-3', 'code-1']);
+      const [zoom, setZoom] = useState(1);
+      const [activeView, setActiveView] = useState('timeline');
+      const [tokenUsage, setTokenUsage] = useState({
+        current: 4850,
+        max: 8000,
+        percentage: 60.6
+      });
+      
+      // Parameter states
+      const [temperature, setTemperature] = useState(0.7);
+      const [contextLength, setContextLength] = useState(4000);
+      const [topP, setTopP] = useState(0.9);
+      const [frequency, setFrequency] = useState(0.5);
+      const [presence, setPresence] = useState(0.6);
+      
+      // Muted and soloed tracks
+      const [mutedTracks, setMutedTracks] = useState([]);
+      const [soloedTracks, setSoloedTracks] = useState([]);
+      
+      // Waveform data (simulated)
+      const [waveformData, setWaveformData] = useState([]);
+      const [spectrumData, setSpectrumData] = useState([]);
+      const [memoryData, setMemoryData] = useState([]);
+      const [tokenDistribution, setTokenDistribution] = useState([]);
+      
+      // Generate random waveform data on mount
+      useEffect(() => {
+        const generateWaveform = (count, min, max, smoothness = 0.5) => {
+          let result = [];
+          let value = Math.random() * (max - min) + min;
+          
+          for (let i = 0; i < count; i++) {
+            // Add some randomness but keep it somewhat smooth
+            value += (Math.random() * 2 - 1) * smoothness;
+            value = Math.min(max, Math.max(min, value));
+            result.push(value);
+          }
+          
+          return result;
+        };
+        
+        // Generate waveform data
+        setWaveformData(generateWaveform(80, 20, 100, 5));
+        setSpectrumData(generateWaveform(60, 10, 80, 2));
+        setMemoryData(generateWaveform(40, 30, 90, 8));
+        setTokenDistribution(generateWaveform(30, 10, 70, 10));
+        
+        // Update waveform periodically if playing
+        const interval = setInterval(() => {
+          if (isPlaying) {
+            setWaveformData(generateWaveform(80, 20, 100, 5));
+            setSpectrumData(generateWaveform(60, 10, 80, 2));
+          }
+        }, 500);
+        
+        return () => clearInterval(interval);
+      }, [isPlaying]);
+
+      // Track and clip data
+      const tracks = [
+        { id: 1, name: 'USER QUERIES', color: 'bg-purple-600', textColor: 'text-purple-400' },
+        { id: 2, name: 'AI RESPONSES', color: 'bg-blue-500', textColor: 'text-blue-400' },
+        { id: 3, name: 'CODE BLOCKS', color: 'bg-green-500', textColor: 'text-green-400' },
+        { id: 4, name: 'DATA ANALYSIS', color: 'bg-pink-500', textColor: 'text-pink-400' },
+        { id: 5, name: 'CONTEXT REFS', color: 'bg-amber-500', textColor: 'text-amber-400' },
+        { id: 6, name: 'ATTACHMENTS', color: 'bg-orange-400', textColor: 'text-orange-400' },
+        { id: 7, name: 'MEMORY', color: 'bg-red-400', textColor: 'text-red-400' },
+        { id: 8, name: 'VISUALIZATIONS', color: 'bg-yellow-400', textColor: 'text-yellow-400' },
+      ];
+
+      const clips = [
+        { id: 'query-1', trackId: 1, start: 0, length: 2, content: 'Initial Query', color: 'bg-purple-600' },
+        { id: 'query-2', trackId: 1, start: 8, length: 2, content: 'Clarification', color: 'bg-purple-500' },
+        { id: 'query-3', trackId: 1, start: 12, length: 1, content: 'Follow-up', color: 'bg-purple-600' },
+        
+        { id: 'response-1', trackId: 2, start: 2, length: 4, content: 'Initial Response', color: 'bg-blue-500' },
+        { id: 'response-2', trackId: 2, start: 9, length: 2, content: 'Clarification', color: 'bg-blue-400' },
+        { id: 'response-3', trackId: 2, start: 13, length: 3, content: 'Detailed Analysis', color: 'bg-blue-500' },
+        
+        { id: 'code-1', trackId: 3, start: 4, length: 3, content: 'Python Function', color: 'bg-green-500' },
+        { id: 'code-2', trackId: 3, start: 14, length: 2, content: 'Optimization', color: 'bg-green-600' },
+        
+        { id: 'data-1', trackId: 4, start: 3, length: 4, content: 'Data Parsing', color: 'bg-pink-500' },
+        { id: 'data-2', trackId: 4, start: 11, length: 4, content: 'Statistical Analysis', color: 'bg-pink-400' },
+        
+        { id: 'context-1', trackId: 5, start: 1, length: 14, content: 'User Background', color: 'bg-amber-500' },
+        
+        { id: 'attach-1', trackId: 6, start: 5, length: 1, content: 'CSV Data', color: 'bg-orange-400' },
+        { id: 'attach-2', trackId: 6, start: 10, length: 2, content: 'Image.png', color: 'bg-orange-500' },
+        
+        { id: 'memory-1', trackId: 7, start: 0, length: 16, content: 'Conversation Memory', color: 'bg-red-400' },
+        
+        { id: 'viz-1', trackId: 8, start: 7, length: 2, content: 'Chart.svg', color: 'bg-yellow-400' },
+        { id: 'viz-2', trackId: 8, start: 15, length: 1, content: 'Graph.svg', color: 'bg-yellow-500' },
+      ];
+
+      // Toggle play state
+      const togglePlay = () => {
+        setIsPlaying(!isPlaying);
+      };
+      
+      // Toggle recording state
+      const toggleRecord = () => {
+        setIsRecording(!isRecording);
+      };
+
+      // Toggle clip selection
+      const toggleClipSelection = (clipId) => {
+        if (selectedClips.includes(clipId)) {
+          setSelectedClips(selectedClips.filter(id => id !== clipId));
+        } else {
+          setSelectedClips([...selectedClips, clipId]);
+        }
+      };
+      
+      // Toggle track mute
+      const toggleMute = (trackId) => {
+        if (mutedTracks.includes(trackId)) {
+          setMutedTracks(mutedTracks.filter(id => id !== trackId));
+        } else {
+          setMutedTracks([...mutedTracks, trackId]);
+        }
+      };
+      
+      // Toggle track solo
+      const toggleSolo = (trackId) => {
+        if (soloedTracks.includes(trackId)) {
+          setSoloedTracks(soloedTracks.filter(id => id !== trackId));
+        } else {
+          setSoloedTracks([...soloedTracks, trackId]);
+        }
+      };
+
+      // Calculate grid positions
+      const gridColumns = 16;
+      const cellWidth = 60;
+      const trackHeight = 40;
+
+      return (
+        <div className="flex flex-col h-screen text-gray-200 bg-gray-900 overflow-hidden">
+          {/* Top toolbar */}
+          <div className="flex items-center bg-gray-800 p-2 border-b border-gray-700">
+            <button className="p-1 mr-2 text-gray-400 hover:text-gray-200">
+              <Icon name="menu" size={18} />
+            </button>
+            <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+              AI Interaction Studio
+            </h1>
+            <div className="mx-4 h-8 flex-grow bg-gray-700 rounded flex items-center px-3 text-sm">
+              Project: Customer Behavior Analysis 
+              <Icon name="chevron-down" size={14} className="ml-2" />
+            </div>
+            <div className="flex space-x-3 items-center">
+              <div className="text-xs text-gray-400">
+                <span className="px-1 rounded bg-gray-700">model:</span>
+                <span className="text-green-400 ml-1">Claude 3.5</span>
+              </div>
+              <div className="flex">
+                <LED active={true} color="green" />
+                <LED active={isPlaying} color="blue" />
+                <LED active={isRecording} color="red" />
+              </div>
+              <button className="p-1 text-gray-400 hover:text-gray-200">
+                <Icon name="settings" size={18} />
+              </button>
+              <button className="p-1 text-gray-400 hover:text-gray-200">
+                <Icon name="save" size={18} />
+              </button>
+              <button className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm font-medium flex items-center">
+                Export <Icon name="chevron-down" size={14} className="ml-1" />
+              </button>
+            </div>
+          </div>
+
+          {/* Transport controls */}
+          <div className="flex items-center bg-gray-800 p-2 border-b border-gray-700">
+            <div className="flex space-x-2 mr-4">
+              <button className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center">
+                <Icon name="skip-back" size={14} />
+              </button>
+              <button 
+                className={`w-9 h-9 rounded-full ${isPlaying ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500'} flex items-center justify-center`}
+                onClick={togglePlay}
+              >
+                {isPlaying ? <Icon name="square" size={14} /> : <Icon name="play" size={14} />}
+              </button>
+              <button 
+                className={`w-8 h-8 rounded-full ${isRecording ? 'bg-red-600 hover:bg-red-500' : 'bg-gray-700 hover:bg-gray-600'} flex items-center justify-center`}
+                onClick={toggleRecord}
+              >
+                <Icon name="circle" size={12} />
+              </button>
+              <button className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center">
+                <Icon name="skip-forward" size={14} />
+              </button>
+              <button className="w-8 h-8 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center">
+                <Icon name="repeat" size={14} />
+              </button>
+              <div className="border-r border-gray-600 h-8 mx-1"></div>
+              <div className="text-xs text-gray-300 flex items-center">
+                <span className="bg-gray-700 px-2 py-1 rounded">04:22</span>
+                <span className="mx-1">/</span>
+                <span>16:00</span>
+              </div>
+            </div>
+            
+            <div className="flex-grow mr-4">
+              <div className="h-2 rounded-full bg-gray-700 w-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-500"
+                  style={{ width: `${(currentPosition / gridColumns) * 100}%` }}
+                ></div>
+              </div>
+              <div className="flex justify-between mt-1 text-xs text-gray-400">
+                <span>00:00</span>
+                <span>04:00</span>
+                <span>08:00</span>
+                <span>12:00</span>
+                <span>16:00</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center bg-gray-700 rounded p-1 space-x-1">
+              <button className={`px-3 py-1 rounded text-xs font-medium ${activeView === 'timeline' ? 'bg-blue-600 text-white' : 'hover:bg-gray-600'}`}>
+                Timeline
+              </button>
+              <button className={`px-3 py-1 rounded text-xs font-medium ${activeView === 'graph' ? 'bg-blue-600 text-white' : 'hover:bg-gray-600'}`}>
+                Graph
+              </button>
+              <button className={`px-3 py-1 rounded text-xs font-medium ${activeView === 'blocks' ? 'bg-blue-600 text-white' : 'hover:bg-gray-600'}`}>
+                Blocks
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-grow overflow-hidden">
+            {/* Track labels sidebar */}
+            <div className="w-40 min-w-40 bg-gray-800 border-r border-gray-700 overflow-y-auto">
+              <div className="h-10 border-b border-gray-700 flex items-center px-3 text-sm font-medium">
+                Tracks
+              </div>
+              {tracks.map(track => (
+                <div 
+                  key={track.id}
+                  className={`p-2 border-b border-gray-700 cursor-pointer ${selectedTrack === track.id ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+                  onClick={() => setSelectedTrack(track.id)}
+                >
+                  <div className="flex items-center">
+                    <div className={`w-3 h-3 rounded-sm ${track.color} mr-2`}></div>
+                    <div className="text-xs font-medium">{track.name}</div>
+                  </div>
+                  <div className="flex mt-2 space-x-1">
+                    <DAWButton 
+                      active={soloedTracks.includes(track.id)}
+                      onClick={() => toggleSolo(track.id)}
+                    >
+                      S
+                    </DAWButton>
+                    <DAWButton 
+                      active={mutedTracks.includes(track.id)}
+                      onClick={() => toggleMute(track.id)}
+                    >
+                      M
+                    </DAWButton>
+                    <button className="text-gray-400 hover:text-gray-200 p-1 rounded hover:bg-gray-600">
+                      <Icon name="sliders" size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button className="w-full p-2 text-xs text-gray-400 hover:bg-gray-700 flex items-center justify-center">
+                <Icon name="plus" size={14} className="mr-1" /> Add Track
+              </button>
+            </div>
+
+            {/* Timeline grid area */}
+            <div className="flex-grow overflow-auto bg-gray-900 relative">
+              {/* Grid headers */}
+              <div className="flex h-10 border-b border-gray-700 sticky top-0 bg-gray-800 z-10">
+                {Array.from({ length: gridColumns }).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="border-r border-gray-700 flex items-center justify-center text-xs text-gray-400 font-medium"
+                    style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }}
+                  >
+                    {i + 1}
+                  </div>
+                ))}
+              </div>
+
+              {/* Timeline tracks and clips */}
+              <div className="relative">
+                {/* Position indicator */}
+                <div 
+                  className="absolute top-0 bottom-0 w-px bg-blue-500 z-20"
+                  style={{ left: `${currentPosition * cellWidth}px` }}
+                >
+                  <div className="h-4 w-4 rounded-full bg-blue-500 absolute -top-2 -ml-2"></div>
+                </div>
+
+                {/* Tracks and grid */}
+                {tracks.map(track => (
+                  <div 
+                    key={track.id} 
+                    className="flex border-b border-gray-700 relative"
+                    style={{ height: `${trackHeight}px` }}
+                  >
+                    {/* Grid cells */}
+                    {Array.from({ length: gridColumns }).map((_, i) => (
+                      <div 
+                        key={i} 
+                        className="border-r border-gray-700"
+                        style={{ width: `${cellWidth}px`, minWidth: `${cellWidth}px` }}
+                      ></div>
+                    ))}
+
+                    {/* Clips on this track */}
+                    {clips.filter(clip => clip.trackId === track.id).map(clip => (
+                      <div
+                        key={clip.id}
+                        className={`absolute top-1 rounded cursor-pointer ${selectedClips.includes(clip.id) ? 'ring-2 ring-blue-400' : ''} ${clip.color} ${mutedTracks.includes(track.id) ? 'opacity-50' : ''}`}
+                        style={{ 
+                          left: `${clip.start * cellWidth}px`, 
+                          width: `${clip.length * cellWidth - 2}px`,
+                          height: `${trackHeight - 6}px`
+                        }}
+                        onClick={() => toggleClipSelection(clip.id)}
+                      >
+                        <div className="px-2 py-1 text-xs font-medium text-white truncate">
+                          {clip.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right sidebar - context and parameters */}
+            <div className="w-64 bg-gray-800 border-l border-gray-700 flex flex-col">
+              {/* Token usage meter */}
+              <div className="p-3 border-b border-gray-700">
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="font-medium">Token Usage</span>
+                  <span>{tokenUsage.current} / {tokenUsage.max}</span>
+                </div>
+                <div className="h-2 rounded-full bg-gray-700 overflow-hidden">
+                  <div 
+                    className={`h-full ${tokenUsage.percentage > 80 ? 'bg-red-500' : 'bg-blue-500'}`}
+                    style={{ width: `${tokenUsage.percentage}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Selected content info */}
+              <div className="p-3 border-b border-gray-700">
+                <h3 className="text-xs font-medium mb-2">Selected Content</h3>
+                {selectedClips.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedClips.map(clipId => {
+                      const clip = clips.find(c => c.id === clipId);
+                      return clip ? (
+                        <div key={clipId} className="flex items-center">
+                          <div className={`w-2 h-2 rounded-sm ${clip.color} mr-2`}></div>
+                          <div className="text-xs truncate">{clip.content}</div>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-400">No content selected</div>
+                )}
+              </div>
+
+              {/* Parameters with knobs */}
+              <div className="p-3 flex-grow overflow-auto">
+                <h3 className="text-xs font-medium mb-2">Parameters</h3>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <Knob 
+                    value={temperature * 100} 
+                    onChange={(val) => setTemperature(val / 100)} 
+                    label="Temperature" 
+                    color="#3b82f6"
+                    size="sm"
+                  />
+                  <Knob 
+                    value={topP * 100} 
+                    onChange={(val) => setTopP(val / 100)} 
+                    label="Top-P" 
+                    color="#10b981"
+                    size="sm"
+                  />
+                  <Knob 
+                    value={frequency * 100} 
+                    onChange={(val) => setFrequency(val / 100)} 
+                    label="Frequency" 
+                    color="#f59e0b"
+                    size="sm"
+                  />
+                  <Knob 
+                    value={presence * 100} 
+                    onChange={(val) => setPresence(val / 100)} 
+                    label="Presence" 
+                    color="#ec4899"
+                    size="sm"
+                  />
+                  <Knob 
+                    value={contextLength / 100} 
+                    onChange={(val) => setContextLength(val * 100)} 
+                    label="Context" 
+                    color="#6366f1"
+                    size="sm"
+                  />
+                  <Knob 
+                    value={75} 
+                    label="Creativity" 
+                    color="#ef4444"
+                    size="sm"
+                  />
+                </div>
+                
+                <div className="mb-3">
+                  <label className="text-xs text-gray-400 block mb-1">Model</label>
+                  <select className="w-full p-1 bg-gray-700 rounded border border-gray-600 text-xs">
+                    <option>Claude 3.5 Sonnet</option>
+                    <option>Claude 3 Opus</option>
+                    <option>GPT-4o</option>
+                    <option>Llama 3</option>
+                  </select>
+                </div>
+                
+                <div className="flex flex-wrap gap-1 text-xs">
+                  <DAWButton active={true}>System</DAWButton>
+                  <DAWButton>Human</DAWButton>
+                  <DAWButton>Assistant</DAWButton>
+                  <DAWButton>Function</DAWButton>
+                  <DAWButton>Tool</DAWButton>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="p-3 border-t border-gray-700">
+                <button className={`w-full ${isRecording ? 'bg-red-600 hover:bg-red-500' : 'bg-blue-600 hover:bg-blue-500'} text-white rounded py-2 text-sm font-medium`}>
+                  {isRecording ? 'Stop Generation' : 'Generate Response'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom panel - plugins and visualizations */}
+          <div className="h-48 bg-gray-800 border-t border-gray-700 flex overflow-hidden p-2 gap-2">
+            {/* Token Analyzer Plugin */}
+            <div className="w-1/4">
+              <PluginWidget title="Token Analyzer">
+                <div className="h-32">
+                  <Waveform 
+                    data={waveformData} 
+                    color="#3b82f6" 
+                    height={32} 
+                  />
+                  <div className="flex text-xs justify-between mt-1 text-gray-400">
+                    <span>Input: 1842 tokens</span>
+                    <span>Output: 3008 tokens</span>
+                  </div>
+                  
+                  <div className="mt-2 text-xs text-gray-300">Token Distribution:</div>
+                  <div className="flex items-end h-8 gap-1 mt-1">
+                    {tokenDistribution.map((value, index) => (
+                      <div 
+                        key={index} 
+                        className="w-2 bg-blue-500 rounded-sm" 
+                        style={{ height: `${value}%`, opacity: 0.2 + (value / 100) * 0.8 }}
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+              </PluginWidget>
+            </div>
+            
+            {/* Topic Heatmap Plugin */}
+            <div className="w-1/4">
+              <PluginWidget title="Topic Heatmap">
+                <div className="grid grid-cols-10 gap-1 h-32">
+                  {Array.from({ length: 50 }).map((_, i) => {
+                    const intensity = Math.random();
+                    const hue = 200 + Math.random() * 40;
+                    return (
+                      <div 
+                        key={i} 
+                        className="rounded-sm"
+                        style={{ 
+                          backgroundColor: `hsla(${hue}, 80%, ${50 + intensity * 30}%, ${0.3 + intensity * 0.7})`,
+                          height: '12px'
+                        }}
+                      ></div>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>Customer Data</span>
+                  <span>Analysis</span>
+                  <span>ML Models</span>
+                </div>
+              </PluginWidget>
+            </div>
+            
+            {/* Memory Visualization */}
+            <div className="w-1/4">
+              <PluginWidget title="Memory Recall">
+                <div className="h-32">
+                  <Waveform 
+                    data={memoryData} 
+                    color="#ec4899" 
+                    height={32} 
+                  />
+                  <div className="mt-2 flex justify-between">
+                    <div className="text-xs text-gray-400">
+                      <div>Recall strength: 85%</div>
+                      <div>Active references: 14</div>
+                    </div>
+                    <div className="flex flex-col justify-between">
+                      <DAWButton active={true}>Auto Recall</DAWButton>
+                      <DAWButton>Manual</DAWButton>
+                    </div>
+                  </div>
+                </div>
+              </PluginWidget>
+            </div>
+            
+            {/* Context Map */}
+            <div className="w-1/4">
+              <PluginWidget title="Context Map">
+                <div className="h-32 relative bg-gray-900 rounded overflow-hidden">
+                  {/* Fake node graph visualization */}
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    <circle cx="50" cy="50" r="3" fill="#3b82f6" />
+                    <circle cx="30" cy="30" r="2" fill="#10b981" />
+                    <circle cx="70" cy="40" r="2" fill="#f59e0b" />
+                    <circle cx="65" cy="70" r="2" fill="#ec4899" />
+                    <circle cx="35" cy="60" r="2" fill="#6366f1" />
+                    
+                    <line x1="50" y1="50" x2="30" y2="30" stroke="#3b82f6" strokeWidth="0.5" opacity="0.5" />
+                    <line x1="50" y1="50" x2="70" y2="40" stroke="#3b82f6" strokeWidth="0.5" opacity="0.5" />
+                    <line x1="50" y1="50" x2="65" y2="70" stroke="#3b82f6" strokeWidth="0.5" opacity="0.5" />
+                    <line x1="50" y1="50" x2="35" y2="60" stroke="#3b82f6" strokeWidth="0.5" opacity="0.5" />
+                    <line x1="30" y1="30" x2="70" y2="40" stroke="#10b981" strokeWidth="0.5" opacity="0.3" />
+                    <line x1="65" y1="70" x2="35" y2="60" stroke="#ec4899" strokeWidth="0.5" opacity="0.3" />
+                    
+                    {/* Additional small nodes */}
+                    {Array.from({ length: 20 }).map((_, i) => {
+                      const x = 20 + Math.random() * 60;
+                      const y = 20 + Math.random() * 60;
+                      const size = 0.3 + Math.random() * 1;
+                      const opacity = 0.3 + Math.random() * 0.7;
+                      
+                      return (
+                        <circle 
+                          key={i} 
+                          cx={x} 
+                          cy={y} 
+                          r={size} 
+                          fill="#ffffff" 
+                          opacity={opacity} 
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+              </PluginWidget>
+            </div>
+          </div>
+        </div>
+      );
+    };
+    
+    // Render the application
+    const root = createRoot(document.getElementById('root'));
+    root.render(<AIInteractionStudio />);
+  </script>
+</body>
+</html>

@@ -210,3 +210,7 @@ This README provides a starting point for team collaboration.  It should be upda
 [First Recommendation - SillyTavern](https://github.com/SillyTavern/SillyTavern)
 
 [MatPlotLib](https://github.com/matplotlib/matplotlib)
+
+Somewhat related:
+
+(https://github.com/jxmorris12/gptzip)
